@@ -862,6 +862,9 @@ ruby << EOF
 			end
 			folders.each do |name, search|
 				q = $curbuf.query(search)
+				$exclude_tags.each { |t|
+					q.add_tag_exclude(t)
+				}
 				$searches << search
 				count = count_threads ? q.search_threads.count : q.search_messages.count
 				if name == ''
@@ -877,6 +880,9 @@ ruby << EOF
 		date_fmt = VIM::evaluate('g:notmuch_date_format')
 		q = $curbuf.query(search)
 		q.sort = Notmuch::SORT_NEWEST_FIRST
+		$exclude_tags.each { |t|
+			q.add_tag_exclude(t)
+		}
 		$threads.clear
 		t = q.search_threads
 
@@ -927,9 +933,6 @@ ruby << EOF
 
 		def query(*args)
 			q = @db.query(*args)
-			$exclude_tags.each { |t|
-				q.add_tag_exclude(t)
-			}
 			@queries << q
 			q
 		end
