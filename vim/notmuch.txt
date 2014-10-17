@@ -47,6 +47,7 @@ MAPPINGS					*notmuch-mappings*
 Folder view~
 
 <enter>	Show selected search
+A	Archive (-inbox -unread) an entire folder
 s	Enter a new search
 =	Refresh
 c	Compose a new mail
