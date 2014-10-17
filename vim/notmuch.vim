@@ -36,7 +36,7 @@ let g:notmuch_show_maps = {
 	\ 't':		'show_tag("")',
 	\ 'o':		'show_open_msg()',
 	\ 'e':		'show_extract_msg()',
-	\ 'v':		'show_view_attachment()',
+	\ '<LocalLeader>v':		'show_view_attachment()',
 	\ 's':		'show_save_msg()',
 	\ 'p':		'show_save_patches()',
 	\ 'u':		'show_open_uri()',
