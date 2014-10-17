@@ -983,6 +983,10 @@ ruby << EOF
 			@last_render = 0
 
 			@b.render { do_next }
+			# If the buffer only was refreshed @last_render will be too
+			# great so is_ready? will always return false.
+			# manually setting it after do_next fixes it
+			@last_render = @b.count
 		end
 
 		def is_ready?
