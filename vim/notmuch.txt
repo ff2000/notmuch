@@ -61,6 +61,7 @@ q	Quit view
 A	Archive (-inbox -unread)
 I	Mark as read (-unread)
 t	Tag (prompted)
+u	Open URI
 s	Search
 =	Refresh
 ?	Show search information
