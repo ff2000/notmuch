@@ -496,6 +496,7 @@ ruby << EOF
 	end
 
 	$db_name = nil
+	$all_emails = []
 	$email = $email_name = $email_address = nil
 	$searches = []
 	$threads = []
@@ -598,14 +599,54 @@ ruby << EOF
 		end
 	end
 
+	def is_our_address(address)
+		$all_emails.each do |addy|
+			if address.to_s.index(addy) != nil
+				return addy
+			end
+		end
+		return nil
+	end
+
 	def open_reply(orig)
 		reply = orig.reply do |m|
-			# fix headers
-			if not m[:reply_to]
-				m.to = [orig[:from].to_s, orig[:to].to_s]
+			m.cc = []
+			email_addr = $email_address
+			# Append addresses to the new to: from the original from:
+			# so long as they are not ours.
+			if orig[:from]
+				orig[:from].each do |o|
+					if not is_our_address(o)
+						m.to << o
+					end
+				end
 			end
-			m.cc = orig[:cc]
-			m.from = $email
+			# This copies the cc list to the new email while
+			# stripping out our own addresses and sets the from:
+			# address to ours if it finds one.
+			if orig[:cc]
+				orig[:cc].each do |o|
+					if is_our_address(o)
+						email_addr = is_our_address(o)
+					else
+						m.cc << o
+					end
+				end
+			end
+			# This copies the to list to the new email while
+			# stripping out our own addresses and sets the from:
+			# address to ours if it finds one.
+			if orig[:to]
+				orig[:to].each do |o|
+					if is_our_address(o)
+						email_addr = is_our_address(o)
+					else
+						m.to << o
+					end
+				end
+			end
+			m.to = m[:reply_to] if m[:reply_to]
+			m.from = "#{$email_name} <#{email_addr}>"
 			m.charset = 'utf-8'
 		end
 
