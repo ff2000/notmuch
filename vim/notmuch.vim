@@ -268,6 +268,14 @@ ruby << EOF
 		if uri.class == URI::MailTo
 			vim_puts("Composing new email to #{uri.to}.")
 			VIM::command("call s:compose('#{uri.to}')")
+		elsif uri.class == URI::MsgID
+			msg = $curbuf.message(uri.opaque)
+			if !msg
+				vim_puts("Message not found in NotMuch database: #{uri.to_s}")
+			else
+				vim_puts("Opening message #{msg.message_id} in thread #{msg.thread_id}.")
+				VIM::command("call s:show('thread:#{msg.thread_id}', '#{msg.message_id}')")
+			end
 		else
 			vim_puts("Opening #{uri.to_s}.")
 			cmd = VIM::evaluate('g:notmuch_open_uri')
@@ -428,11 +436,12 @@ endfunction
 
 "" main
 
-function! s:show(thread_id)
+function! s:show(thread_id, msg_id)
 	call s:new_buffer('show')
 	setlocal modifiable
 ruby << EOF
 	thread_id = VIM::evaluate('a:thread_id')
+	msg_id = VIM::evaluate('a:msg_id')
 	$cur_thread = thread_id
 	$messages.clear
 	$curbuf.render do |b|
@@ -464,6 +473,9 @@ ruby << EOF
 			end
 			b << ""
 			nm_m.end = b.count
+			if !msg_id.empty? and nm_m.message_id == msg_id
+				VIM::command("normal #{nm_m.start}zt")
+			end
 		end
 		b.delete(b.count)
 	end
@@ -486,7 +498,7 @@ ruby << EOF
 	when 1; $cur_filter = nil
 	when 2; $cur_filter = $cur_search
 	end
-	VIM::command("call s:show('#{id}')")
+	VIM::command("call s:show('#{id}', '')")
 EOF
 endfunction
 
@@ -910,6 +922,10 @@ ruby << EOF
 			q
 		end
 
+		def message(id)
+			@db.find_message(id)
+		end
+
 		def close
 			@queries.delete_if { |q| ! q.destroy! }
 			@db.close
@@ -928,6 +944,13 @@ ruby << EOF
 				db.close
 			end
 		end
+	end
+
+	module URI
+		class MsgID < Generic
+		end
+
+		@@schemes['ID'] = MsgID
 	end
 
 	class Message
