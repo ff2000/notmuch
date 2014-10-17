@@ -647,6 +647,7 @@ ruby << EOF
 	$db_name = nil
 	$all_emails = []
 	$email = $email_name = $email_address = nil
+	$exclude_tags = []
 	$searches = []
 	$threads = []
 	$messages = []
@@ -672,6 +673,8 @@ ruby << EOF
 		# Add the primary to this too as we use it for checking
 		# addresses when doing a reply
 		$all_emails.unshift($email_address)
+		ignore_tags = get_config_item('search.exclude_tags')
+		$exclude_tags = ignore_tags.split("\n")
 	end
 
 	def vim_puts(s)
@@ -924,6 +927,9 @@ ruby << EOF
 
 		def query(*args)
 			q = @db.query(*args)
+			$exclude_tags.each { |t|
+				q.add_tag_exclude(t)
+			}
 			@queries << q
 			q
 		end
