@@ -9,4 +9,4 @@ highlight link nmSearchDate	Statement
 highlight link nmSearchNum	Type
 highlight link nmSearchFrom	Include
 highlight link nmSearchSubject	Normal
-highlight link nmSearchTags	String
+highlight link nmSearchTags	Comment
