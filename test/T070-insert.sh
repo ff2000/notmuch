@@ -2,6 +2,8 @@
 test_description='"notmuch insert"'
 . ./test-lib.sh
 
+test_require_external_prereq gdb
+
 # Create directories and database before inserting.
 mkdir -p "$MAIL_DIR"/{cur,new,tmp}
 mkdir -p "$MAIL_DIR"/Drafts/{cur,new,tmp}
@@ -23,7 +25,7 @@ test_expect_code 1 "Insert zero-length file" \
 
 # This test is a proxy for other errors that may occur while trying to
 # add a message to the notmuch database, e.g. database locked.
-test_expect_code 0 "Insert non-message" \
+test_expect_code 1 "Insert non-message" \
     "echo bad_message | notmuch insert"
 
 test_begin_subtest "Database empty so far"
@@ -182,5 +184,31 @@ test_expect_code 1 "Invalid tags set exit code" \
     "notmuch insert $gen_msg_filename 2>&1"
 
 notmuch config set new.tags $OLDCONFIG
+
+# DUPLICATE_MESSAGE_ID is not tested here, because it should actually pass.
+
+for code in OUT_OF_MEMORY XAPIAN_EXCEPTION FILE_NOT_EMAIL \
+    READ_ONLY_DATABASE UPGRADE_REQUIRED; do
+gen_insert_msg
+cat <<EOF > index-file-$code.gdb
+file notmuch
+set breakpoint pending on
+break notmuch_database_add_message
+commands
+return NOTMUCH_STATUS_$code
+continue
+end
+run
+EOF
+test_begin_subtest "error exit when add_message returns $code"
+gdb --batch-silent --return-child-result -x index-file-$code.gdb \
+    --args notmuch insert  < $gen_msg_filename
+test_expect_equal $? 1
+
+test_begin_subtest "success exit with --keep when add_message returns $code"
+gdb --batch-silent --return-child-result -x index-file-$code.gdb \
+    --args notmuch insert --keep  < $gen_msg_filename
+test_expect_equal $? 0
+done
 
 test_done
